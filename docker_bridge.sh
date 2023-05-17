@@ -1,0 +1,1 @@
+cd /vehicle/yckj3860/code/EVA_wjf/ && bash start.sh

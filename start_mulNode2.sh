@@ -42,7 +42,7 @@ PRETRAINED_TEXT_MODEL=OpenaiCLIP-B-16
 
 # Following OpenCLIP, we preprocess data by webdataset. We concat paths of LAION-2B and COYO-700M with `;`.
 
-MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.tar"
+MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..03000}.tar"
 # MERGE_2B_DATA_PATH="/vehicle/yckj3860/data/vlm_data/mscoco/{00000..00059}.tar;/data2/opensource/CC12M//{00000..00009}.tar;/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.tar;/home/yckj1563/data/CommonPool/small/shards/{00000000..00000050}.tar;/data2/opensource/SBU/{00000..00050}.tar"
 # MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.tar"
 VAL_DATA_PATH=/vehicle/dataset/imagenet/val/
@@ -63,13 +63,13 @@ export PATH=/usr/local/cuda/bin:$PATH
         --report-to="tensorboard" \
         --wandb-project-name="eva-clip" \
         --wandb-notes="eva02_clip_B_16" \
-        --train-num-samples 600000 \
+        --train-num-samples 18000000 \
         --dataset-resampled \
         --train-data-list=${MERGE_2B_DATA_PATH} \
         --dataset-type-list="webdataset" \
         --imagenet-val=${VAL_DATA_PATH} \
         --warmup 2000 \
-        --batch-size=784 \
+        --batch-size=1200 \
         --epochs=15 \
         --lr=5e-5 \
         --visual-lr=5e-5 \
@@ -86,7 +86,7 @@ export PATH=/usr/local/cuda/bin:$PATH
         --model=${MODEL} \
         --pretrained ${PRETRAINED} \
         --skip-list head.weight head.bias  \
-        --lock-text-unlocked-layers 1 \
+        --lock-image \
         --seed 4096 \
         --gather-with-grad \
         --grad-checkpointing \

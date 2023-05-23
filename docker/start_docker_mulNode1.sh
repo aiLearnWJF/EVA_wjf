@@ -47,7 +47,7 @@ MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.t
 # MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.tar"
 VAL_DATA_PATH=/vehicle/dataset/imagenet/val/
 
-cd EVA-CLIP/rei
+cd /vehicle/yckj3860/code/EVA_wjf/EVA-CLIP/rei
 
 # export WORLD_SIZE=2
 export NCCL_DEBUG=INFO
@@ -56,7 +56,7 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 export PATH=/usr/local/cuda/bin:$PATH
 /vehicle/yckj3860/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m torch.distributed.launch --nproc_per_node=8 \
        	--nnodes=2 --node_rank=0 \
-	--master_addr="10.168.4.169" --master_port=12367 --use_env \
+	--master_addr="10.168.4.169" --master_port=8234 --use_env \
     training/main.py \
         --save-frequency 1 \
         --zeroshot-frequency 30 \
@@ -69,7 +69,7 @@ export PATH=/usr/local/cuda/bin:$PATH
         --dataset-type-list="webdataset" \
         --imagenet-val=${VAL_DATA_PATH} \
         --warmup 2000 \
-        --batch-size=784 \
+        --batch-size=512 \
         --epochs=15 \
         --lr=5e-5 \
         --visual-lr=5e-5 \

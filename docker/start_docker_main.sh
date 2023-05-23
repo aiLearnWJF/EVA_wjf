@@ -48,7 +48,7 @@ MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.t
 # MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.tar"
 VAL_DATA_PATH=/vehicle/dataset/imagenet/val/
 
-cd EVA-CLIP/rei
+cd /vehicle/yckj3860/code/EVA_wjf/EVA-CLIP/rei
 # export WORLD_SIZE=1
 /vehicle/yckj3860/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m torch.distributed.launch --nproc_per_node=8 \
        	--nnodes=1 --node_rank=0 \

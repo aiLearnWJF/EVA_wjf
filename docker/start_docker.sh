@@ -29,6 +29,7 @@ echo "开始启动容器并运行..."
 # 修改docker_cmd_bridge.sh控制分布式训练脚本
 # 如果需要后台运行 -it 改为 -d , 通过 docker logs -f 容器名 查看进展
 #-p 18022:22 -p 18080:80 -p 8234:8234  \
+echo "nnodes:${1},rank:${2},masterip:${3},eth:${4}"
 sudo docker run --name ${DST_CONTAINER_NAME} \
                 --net=host \
                 -v/vehicle:/vehicle \
@@ -36,6 +37,6 @@ sudo docker run --name ${DST_CONTAINER_NAME} \
                 -v/usr/local/cuda-11.7:/usr/local/cuda-11.7 \
                 --gpus "all"  \
                 --shm-size ${SHM_SIZE} \
-                -d  ${DST_IMAGE_NAME}  bash /vehicle/yckj3860/code/EVA_wjf/docker/docker_cmd_bridge.sh
+                -d  ${DST_IMAGE_NAME}  bash /vehicle/yckj3860/code/EVA_wjf/docker/docker_cmd_bridge.sh $1 $2 $3 $4
 # 实时日志，可中断不影响程序
-sudo docker logs -f ${DST_CONTAINER_NAME}
+# sudo docker logs -f ${DST_CONTAINER_NAME}

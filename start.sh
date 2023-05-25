@@ -43,7 +43,7 @@ PRETRAINED_TEXT_MODEL=OpenaiCLIP-B-16
 
 # Following OpenCLIP, we preprocess data by webdataset. We concat paths of LAION-2B and COYO-700M with `;`.
 
-MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.tar"
+MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..00010}.tar"
 # MERGE_2B_DATA_PATH="/vehicle/yckj3860/data/vlm_data/mscoco/{00000..00059}.tar;/data2/opensource/CC12M//{00000..00009}.tar;/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.tar;/home/yckj1563/data/CommonPool/small/shards/{00000000..00000050}.tar;/data2/opensource/SBU/{00000..00050}.tar"
 # MERGE_2B_DATA_PATH="/data2/opensource/LAION-400M/laion400m-data/{00000..00100}.tar"
 VAL_DATA_PATH=/vehicle/dataset/imagenet/val/
@@ -55,18 +55,18 @@ cd EVA-CLIP/rei
 	--master_addr='localhost' --master_port=12357 --use_env \
         training/main.py \
         --save-frequency 1 \
-        --zeroshot-frequency 1 \
+        --zeroshot-frequency 5 \
         --report-to="tensorboard" \
         --wandb-project-name="eva-clip" \
         --wandb-notes="eva02_clip_B_16" \
-        --train-num-samples 6000000 \
+        --train-num-samples 60000 \
         --dataset-resampled \
         --train-data-list=${MERGE_2B_DATA_PATH} \
         --dataset-type-list="webdataset" \
         --imagenet-val=${VAL_DATA_PATH} \
         --warmup 2000 \
         --batch-size=512 \
-        --epochs=20 \
+        --epochs=10 \
         --lr=5e-5 \
         --visual-lr=1e-4 \
         --text-lr=1e-5 \
@@ -90,11 +90,12 @@ cd EVA-CLIP/rei
         --force-patch-dropout=0.5 \
         --optimizer="adam" \
         --zero-stage=1 \
-        --lock-image \
         --grad-accumulation-steps 2 \
-        --precision "amp" \
+        --log-every-n-steps 1 \
         --enable-deepspeed
 
+        # --lock-image \
+        # --grad-accumulation-steps 2 \
 # ┌────────────────────────────────────────────────────────────────────────┐
 # │              同步到196上，慎用！必须在EVA_wjf目录下运行      
 # └────────────────────────────────────────────────────────────────────────┘

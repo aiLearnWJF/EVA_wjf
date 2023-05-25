@@ -69,7 +69,7 @@ export PATH=/usr/local/cuda/bin:$PATH
         --dataset-type-list="webdataset;webdataset;webdataset;webdataset;webdataset" \
         --imagenet-val=${VAL_DATA_PATH} \
         --warmup 2000 \
-        --batch-size=512 \
+        --batch-size=784 \
         --epochs=6 \
         --lr=2e-4 \
         --visual-lr=1e-4 \
@@ -85,6 +85,7 @@ export PATH=/usr/local/cuda/bin:$PATH
         --workers=1 \
         --model=${MODEL} \
         --pretrained ${PRETRAINED} \
+        --resume  /vehicle/yckj3860/code/EVA_wjf/EVA-CLIP/rei/logs/2023_05_25-00_20_53-model_EVA02-CLIP-B-16-lr_0.0002-b_784-j_1-p_amp/checkpoints/ \
         --skip-list head.weight head.bias lm_head.weight lm_head.bias mask_token text_projection logit_scale  \
         --seed 4096 \
         --gather-with-grad \

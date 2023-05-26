@@ -346,6 +346,13 @@ def main(args):
                 ):
                     client_state = {'epoch': completed_epoch}
                     model.save_checkpoint(save_dir=deepspeed_checkpoint_path, tag="epoch_%s" % str(completed_epoch), client_state=client_state)
+                    # added by wjf , to conver zero-3 model to fp32 model
+                    # if args.zero_stage == 3:
+                    #     try:
+                    #         import zero_to_fp32
+                    #         zero_to_fp32.convert_zero_checkpoint_to_fp32_state_dict(deepspeed_checkpoint_path, deepspeed_checkpoint_path+"/epoch_%s/mp_rank_00_model_states.pt" % str(completed_epoch))
+                    #     except:
+                    #         print("convert_zero_checkpoint_to_fp32_state_dict error")
 
         elif args.save_logs:
             checkpoint_dict = {

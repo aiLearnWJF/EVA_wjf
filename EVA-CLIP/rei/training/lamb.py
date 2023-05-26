@@ -138,7 +138,7 @@ class Lamb(Optimizer):
                 bias_correction1, bias_correction2 = 1.0, 1.0
 
             for p in group['params']:
-                if p.grad is None:
+                if p.grad is None or  len(p.grad.shape) == 0:
                     continue
                 grad = p.grad.div_(clip_global_grad_norm)
                 state = self.state[p]

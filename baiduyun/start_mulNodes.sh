@@ -2,27 +2,6 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 export PYTHONPATH="/vehicle/yckj3860/code/EVA_wjf/EVA-CLIP/rei"
 # py37_torch1_7_evaclip eva_clip
 
-
-# ┌────────────────────────────────────────────────────────────────────────┐
-# │  直接测试比对相似度        
-# └────────────────────────────────────────────────────────────────────────┘
-# /vehicle/yckj3860/miniconda3/envs/py37_torch1_7_evaclip/bin/python test_my.py
-
-# ┌────────────────────────────────────────────────────────────────────────┐
-# │              测试imagenet精度      
-# └────────────────────────────────────────────────────────────────────────┘
-# MODEL_NAME=EVA02-CLIP-B-16
-# PRETRAINED=/home/yckj3860/.cache/huggingface/hub/models--QuanSun--EVA-CLIP/snapshots/63d255690a20d26438e10737a86246a94e8cc2c1/EVA02_CLIP_B_psz16_s8B.pt
-# DATA_PATH=/vehicle/dataset/imagenet/val/
-# cd EVA-CLIP/rei
-
-# /vehicle/yckj3860/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m torch.distributed.launch --nproc_per_node=1 --nnodes=1 --node_rank=0 \
-# 	--master_addr='localhost' --master_port=12355 --use_env training/main.py \
-#         --imagenet-val ${DATA_PATH} \
-#         --model ${MODEL_NAME} \
-#         --pretrained ${PRETRAINED} \
-#         --force-custom-clip
-
 # ┌────────────────────────────────────────────────────────────────────────┐
 # │              预训练      
 # └────────────────────────────────────────────────────────────────────────┘
@@ -69,8 +48,8 @@ export PATH=/usr/local/cuda/bin:$PATH
         --dataset-type-list="webdataset;webdataset;webdataset;webdataset;webdataset" \
         --imagenet-val=${VAL_DATA_PATH} \
         --warmup 2000 \
-        --batch-size=784 \
-        --epochs=8 \
+        --batch-size=512 \
+        --epochs=6 \
         --lr=2e-4 \
         --visual-lr=1e-4 \
         --text-lr=1e-5 \
@@ -85,7 +64,6 @@ export PATH=/usr/local/cuda/bin:$PATH
         --workers=1 \
         --model=${MODEL} \
         --pretrained ${PRETRAINED} \
-        --resume  /vehicle/yckj3860/code/EVA_wjf/EVA-CLIP/rei/logs/2023_05_25-13_42_14-model_EVA02-CLIP-B-16-lr_0.0002-b_784-j_1-p_amp/checkpoints/ \
         --skip-list head.weight head.bias lm_head.weight lm_head.bias mask_token text_projection logit_scale  \
         --seed 4096 \
         --gather-with-grad \
@@ -98,8 +76,3 @@ export PATH=/usr/local/cuda/bin:$PATH
         --grad-accumulation-steps 4 \
         --dist-backend="nccl" \
         --enable-deepspeed
-
-# ┌────────────────────────────────────────────────────────────────────────┐
-# │              同步到196上，慎用！必须在EVA_wjf目录下运行      
-# └────────────────────────────────────────────────────────────────────────┘
-# rsync -avg yckj3860@10.168.4.11:/home/yckj3860/code/EVA_wjf/* .

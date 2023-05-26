@@ -15,7 +15,7 @@ def email_sender(content = "Python 邮件发送测试...", subject = "Python SMT
 	mail_pass="vfthlfomlupshdbd"   #口令 
 
 	sender = '1576850974@qq.com'   # 这里必须和上面mail_user一致
-	receivers = ['1576850974@qq.com',"wenjianfeng@cloudwalk.com"]  # 接收邮件，可设置任意其他邮箱
+	receivers = ['1576850974@qq.com']  # 接收邮件，可设置任意其他邮箱
 
 	# 邮件内容
 	message = MIMEText(content, 'plain', 'utf-8')
@@ -81,7 +81,7 @@ def get_cpu_info():
 # 主函数
 def main():
     stopped_num = 10000000     # （设置一个最大获取次数，防止记录文本爆炸）
-    delay = 60  # 采样信息时间间隔 s
+    delay = 120  # 采样信息时间间隔 s
     frame_thr = 5 # 历史帧数累计平均
     gpu_mem_thr = 5 # 平均小于这个会报警
     gpu_usage_thr = 50 # 平均小于这个会报警
@@ -136,10 +136,10 @@ def main():
                      warning_str += "average_gpumem is %f, lower than %f, please check\n"%(average_gpumem_warning,gpu_mem_thr)
                 if average_usage_warning < gpu_usage_thr:
                      warning_state = True
-                     warning_str += "average_usage_warning is %f, lower than %f, please check\n"%(average_gpumem_warning,gpu_mem_thr)
+                     warning_str += "average_usage_warning is %f, lower than %f, please check\n"%(average_usage_warning,gpu_usage_thr)
                 if average_cpumem_warning < cpu_mem_thr:
                      warning_state = True
-                     warning_str += "average_cpumem_warning is %f, lower than %f, please check\n"%(average_gpumem_warning,gpu_mem_thr)
+                     warning_str += "average_cpumem_warning is %f, lower than %f, please check\n"%(average_cpumem_warning,cpu_mem_thr)
                 if warning_state and warning_times < 2:
                     email_sender(content=warning_str, subject="多机训练可能有节点出现宕机!")
                     warning_times += 1

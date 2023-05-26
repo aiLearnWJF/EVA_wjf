@@ -112,8 +112,12 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
 
         data_time_m.update(time.time() - end)
         if args.enable_deepspeed:
-            model.zero_grad()
-            model.micro_steps = 0
+            pass
+            # model.zero_grad()
+            # model.micro_steps = 0
+            # if model._is_gradient_accumulation_boundary:
+            #     model.zero_grad()
+            #     model.micro_steps = 0
         else:
             optimizer.zero_grad()
 

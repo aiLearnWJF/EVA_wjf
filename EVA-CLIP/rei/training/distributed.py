@@ -171,7 +171,7 @@ def create_deepspeed_config(args):
             "train_batch_size": args.batch_size * world_size * args.grad_accumulation_steps,
             "train_micro_batch_size_per_gpu": args.batch_size,
             "gradient_accumulation_steps": args.grad_accumulation_steps,
-            "gradient_accumulation_dtype": "fp32",
+            # "gradient_accumulation_dtype": "fp32",
             "steps_per_print": 1000,
             "zero_allow_untested_optimizer": True,
             "fp16": {

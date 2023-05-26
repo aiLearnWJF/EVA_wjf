@@ -42,8 +42,8 @@ cd /mnt/pfs/data/yckj1563/projects/EVA_wjf/EVA-CLIP/rei
 # export WORLD_SIZE=2
 export NCCL_DEBUG=INFO
 export NCCL_SOCKET_IFNAME=$4
-# export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-# export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+export PATH=/usr/local/cuda/bin:$PATH
 nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m torch.distributed.launch --nproc_per_node=8 \
        	--nnodes=$1 --node_rank=$2 \
 	--master_addr="${3}" --master_port=8234 --use_env \
@@ -84,5 +84,6 @@ nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m
         --force-patch-dropout=0.5 \
         --optimizer="lamb" \
         --zero-stage=1 \
-        --dist-backend="nccl" \
+        --grad-accumulation-steps 4 \
+        --dist-backend="nccl"  \
         >/mnt/pfs/data/yckj1563/projects/EVA_wjf/baiduyun/outputs/${5}_${2}.log 2>&1  &

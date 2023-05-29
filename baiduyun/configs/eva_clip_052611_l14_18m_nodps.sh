@@ -16,7 +16,7 @@ export PYTHONPATH="/mnt/pfs/data/yckj1563/project/EVA_wjf/EVA-CLIP/rei"
 # ┌────────────────────────────────────────────────────────────────────────┐
 # │              预训练      
 # └────────────────────────────────────────────────────────────────────────┘
-MODEL=EVA01-CLIP-g-14
+MODEL=EVA02-CLIP-L-14
 # PRETRAINED 是载入完整权重，后两个是分别载入权重，好像会有问题，初始很低
 # PRETRAINED=/mnt/pfs/data/yckj1563/projects/EVA_wjf/pretrained/EVA02_CLIP_B_psz16_s8B.pt
 PRETRAINED_IMAGE=eva #/home/yckj3860/.cache/huggingface/hub/models--QuanSun--EVA-CLIP/snapshots/63d255690a20d26438e10737a86246a94e8cc2c1/EVA02_CLIP_B_psz16_s8B.pt
@@ -60,7 +60,7 @@ nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m
         --dataset-type-list="webdataset;webdataset;webdataset;webdataset;webdataset" \
         --imagenet-val=${VAL_DATA_PATH} \
         --warmup 2000 \
-        --batch-size=1400 \
+        --batch-size=3100 \
         --epochs=6 \
         --lr=2e-4 \
         --visual-lr=1e-4 \
@@ -82,7 +82,7 @@ nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m
         --local-loss \
         --force-custom-clip \
         --force-patch-dropout=0.5 \
-        --precision=amp \
+        --precision=amp_bf16 \
         --optimizer="lamb" \
         --zero-stage=1 \
         --dist-backend="nccl"  \

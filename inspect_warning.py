@@ -81,7 +81,7 @@ def get_cpu_info():
 # 主函数
 def main():
     stopped_num = 10000000     # （设置一个最大获取次数，防止记录文本爆炸）
-    delay = 20  # 采样信息时间间隔 s
+    delay = 120  # 采样信息时间间隔 s
     frame_thr = 5 # 历史帧数累计平均
     gpu_mem_thr = 20 # 平均小于这个会报警
     gpu_usage_thr = 50 # 平均小于这个会报警

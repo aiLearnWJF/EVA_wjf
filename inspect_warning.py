@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+# 输入example
+# /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python inspect_warning.py --delay 120 --gpu_mem_thr 20 --gpu_usage_thr 50 --cpu_mem_thr 20 --sleepaw 3600
 # 监控程序是否正常运行，报警或者自动resume程序
 import smtplib
 from email.mime.text import MIMEText
@@ -7,6 +9,8 @@ from email.header import Header
 import GPUtil
 import time
 import psutil
+
+import argparse
 
 def email_sender(content = "Python 邮件发送测试...", subject = "Python SMTP 邮件测试"):
 	# 第三方 SMTP 服务
@@ -81,11 +85,21 @@ def get_cpu_info():
 # 主函数
 def main():
     stopped_num = 10000000     # （设置一个最大获取次数，防止记录文本爆炸）
-    delay = 120  # 采样信息时间间隔 s
-    frame_thr = 5 # 历史帧数累计平均
-    gpu_mem_thr = 20 # 平均小于这个会报警
-    gpu_usage_thr = 50 # 平均小于这个会报警
-    cpu_mem_thr = 20 # 平均小于这个会报警
+    parser = argparse.ArgumentParser(description='inspect warning')
+    parser.add_argument('-d', '--delay', type=int, default=120)
+    parser.add_argument('-f', '--frame_thr', type=int, default=5)
+    parser.add_argument('-g', '--gpu_mem_thr', type=float, default=20)
+    parser.add_argument('-u', '--gpu_usage_thr', type=float, default=50)
+    parser.add_argument('-c', '--cpu_mem_thr', type=float, default=20)
+    parser.add_argument('-s', '--sleepaw', type=int, default=3600)
+
+    args = parser.parse_args()
+    delay = args.delay  # 采样信息时间间隔 s
+    frame_thr = args.frame_thr # 历史帧数累计平均
+    gpu_mem_thr = args.gpu_mem_thr # 平均小于这个会报警，单位G
+    gpu_usage_thr = args.gpu_usage_thr # 平均小于这个会报警,单位百分比
+    cpu_mem_thr = args.cpu_mem_thr # 平均小于这个会报警, 单位g
+    sleepaw = args.sleepaw # 发送邮件后的sleep时间
 
     times = 0
     list_inspect_info = [] # 保存gpumem gpuusage cpumem
@@ -116,11 +130,12 @@ def main():
             list_inspect_info.append([average_mem, average_usage, cpu_info[3]])
             time.sleep(delay)
 
-            # 判断程序是否挂掉
+            # 判断程序是否挂掉,用滑动窗口累计
             average_gpumem_warning = 0
             average_usage_warning = 0
             average_cpumem_warning = 0
             if len(list_inspect_info) > frame_thr:
+                # 获取过去frame_thr帧数的平均值
                 for list_inspect_info_ in list_inspect_info[-frame_thr:]:
                      average_gpumem_warning += list_inspect_info_[0]
                      average_usage_warning += list_inspect_info_[1]
@@ -133,16 +148,20 @@ def main():
                 warning_str = ""
                 if average_gpumem_warning < gpu_mem_thr:
                      warning_state = True
-                     warning_str += "average_gpumem is %f, lower than %f, please check\n\n"%(average_gpumem_warning,gpu_mem_thr)
+                     warning_str += "average gpumem is %f G, lower than %f G, please check\n\n"%(average_gpumem_warning,gpu_mem_thr)
                 if average_usage_warning < gpu_usage_thr:
                      warning_state = True
-                     warning_str += "average_gpu_usage_warning is %f, lower than %f, please check\n\n"%(average_usage_warning,gpu_usage_thr)
+                     warning_str += "average gpu usage is %f percent, lower than %f percent, please check\n\n"%(average_usage_warning,gpu_usage_thr)
                 if average_cpumem_warning < cpu_mem_thr:
                      warning_state = True
-                     warning_str += "average_cpumem_warning is %f, lower than %f, please check\n\n"%(average_cpumem_warning,cpu_mem_thr)
-                if warning_state and warning_times < 2:
-                    email_sender(content=warning_str, subject="多机训练可能有节点出现宕机,或者训练完成")
-                    warning_times += 1
+                     warning_str += "average cpumem is %f G, lower than %f G, please check\n\n"%(average_cpumem_warning,cpu_mem_thr)
+                if warning_state:
+                     warning_times += 1
+                # 达到特定帧数才开始发送邮件，并且发完sleep一段时间
+                if warning_state and warning_times >= 2:
+                    email_sender(content=warning_str, subject="训练完成或多机训练终止")
+                    warning_times = 0
+                    time.sleep(sleepaw)
             times += 1
         else:
             break

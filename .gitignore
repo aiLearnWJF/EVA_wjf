@@ -1,3 +1,5 @@
 pretrained/
 **tar
 baiduyun/outputs/
+baiduyun/test_log/
+**log

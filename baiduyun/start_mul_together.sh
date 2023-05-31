@@ -16,14 +16,14 @@ done
 
 cnt=0
 name=$1
-
 for i in "${ip_array[@]}"; do
 echo "$i"
 echo "正在启动编号为${cnt}的机器"
 ssh ${i} "cd /mnt/pfs/data/yckj1563/projects/EVA_wjf/baiduyun && ./configs/${name}.sh ${nnodes} $cnt ${master_addr} ${eth_array[$cnt]} ${name} &"
 let "cnt++"
 done
-sleep 8h
+
+# sleep 8h
 # > outputs/${name}_${cnt}.log 2>&1
 
 # master上开启监控

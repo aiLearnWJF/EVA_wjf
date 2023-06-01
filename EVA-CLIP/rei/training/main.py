@@ -25,7 +25,7 @@ from training.data import get_data
 from training.distributed import is_master, init_distributed_device, world_info_from_env, create_deepspeed_config
 from training.logger import setup_logging
 from training.params import parse_args
-from training.scheduler import warmup_cosine_lr
+from training.scheduler import warmup_cosine_lr,warmup_step_lr
 from training.train import train_one_epoch, evaluate, extract_features
 from training.optim import create_optimizer, get_all_parameters
 
@@ -287,7 +287,12 @@ def main(args):
         total_steps = data["train"].dataloader.num_batches * args.epochs
         if is_master(args):
             logging.info(f"total_steps: {total_steps}")
-        scheduler = warmup_cosine_lr(optimizer, args, total_steps)
+        if args.lr_scheduler == "warmup_cosine_lr":
+            logging.info(f'use lr scheduler: warmup_cosine_lr')
+            scheduler = warmup_cosine_lr(optimizer, args, total_steps)
+        elif args.lr_scheduler == "warmup_step_lr":
+            logging.info(f'use lr scheduler: warmup_step_lr')
+            scheduler = warmup_step_lr(optimizer, args, 500)
 
     # determine if this worker should save logs and checkpoints. only do so if it is rank == 0
     args.save_logs = args.logs and args.logs.lower() != 'none' and is_master(args)

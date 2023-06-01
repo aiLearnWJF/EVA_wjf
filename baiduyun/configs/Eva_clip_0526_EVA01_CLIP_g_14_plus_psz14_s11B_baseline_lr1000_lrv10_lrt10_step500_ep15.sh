@@ -16,9 +16,9 @@ export PYTHONPATH="/mnt/pfs/data/yckj1563/project/EVA_wjf/EVA-CLIP/rei"
 # ┌────────────────────────────────────────────────────────────────────────┐
 # │              预训练      
 # └────────────────────────────────────────────────────────────────────────┘
-MODEL=EVA02-CLIP-L-14
+MODEL=EVA01-CLIP-g-14
 # PRETRAINED 是载入完整权重，后两个是分别载入权重，好像会有问题，初始很低
-# PRETRAINED=/mnt/pfs/data/yckj1563/projects/EVA_wjf/pretrained/EVA02_CLIP_B_psz16_s8B.pt
+PRETRAINED=/mnt/pfs/data/yckj1563/projects/EVA_wjf/pretrained/EVA01_CLIP_g_14_psz14_s11B.pt
 PRETRAINED_IMAGE=eva #/home/yckj3860/.cache/huggingface/hub/models--QuanSun--EVA-CLIP/snapshots/63d255690a20d26438e10737a86246a94e8cc2c1/EVA02_CLIP_B_psz16_s8B.pt
 PRETRAINED_TEXT=openai #/home/yckj3860/.cache/clip/ViT-B-16.pt
 PRETRAINED_VISUAL_MODEL=EVA02-B-16
@@ -49,33 +49,34 @@ nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m
 	--master_addr="${3}" --master_port=8234 --use_env \
     training/main.py \
         --save-frequency 1 \
-        --zeroshot-frequency 10 \
-        --log-every-n-steps 5 \
+        --zeroshot-frequency 1 \
         --report-to="tensorboard" \
         --wandb-project-name="eva-clip" \
-        --wandb-notes="eva02_clip_B_16" \
-        --train-num-samples 18000000 \
+        --wandb-notes="eva01_clip_g_plus_14" \
+        --train-num-samples 11000000 \
         --dataset-resampled \
         --train-data-list=${MERGE_2B_DATA_PATH} \
-        --dataset-type-list="webdataset;webdataset;webdataset;webdataset;webdataset" \
+        --dataset-type-list="webdataset;webdataset" \
         --imagenet-val=${VAL_DATA_PATH} \
-        --warmup 2000 \
-        --batch-size=3100 \
-        --epochs=6 \
-        --lr=2e-4 \
-        --visual-lr=1e-4 \
-        --text-lr=1e-5 \
+        --warmup 20 \
+        --batch-size=2176 \
+        --epochs=15 \
+        --lr-scheduler warmup_step_lr \
+        --lr=3.4e-1 \
+        --visual-lr=2.7e-3 \
+        --text-lr=2.7e-4 \
         --wd=0.05 \
         --visual-wd=0.05 \
         --text-wd=0.05 \
         --ld=1.0 \
-        --visual-ld=0.75 \
+        --visual-ld=0.85 \
         --text-ld=0.75 \
         --grad-clip-norm=5.0 \
         --smoothing=0. \
-        --workers=2 \
+        --workers=8 \
         --model=${MODEL} \
-        --skip-list head.weight head.bias lm_head.weight lm_head.bias mask_token text_projection logit_scale  \
+        --pretrained ${PRETRAINED} \
+        --skip-list head.weight head.bias lm_head.weight lm_head.bias mask_token text_projection logit_scale \
         --seed 4096 \
         --gather-with-grad \
         --grad-checkpointing \
@@ -85,5 +86,4 @@ nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m
         --precision=amp_bf16 \
         --optimizer="lamb" \
         --zero-stage=1 \
-        --dist-backend="nccl"  \
         >/mnt/pfs/data/yckj1563/projects/EVA_wjf/baiduyun/outputs/${5}_${2}.log 2>&1  &

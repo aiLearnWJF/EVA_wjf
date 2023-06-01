@@ -28,8 +28,10 @@ export PYTHONPATH="/vehicle/yckj3860/code/EVA_wjf/EVA-CLIP/rei"
 # │              测试imagenet精度,百度云11服务器上      
 # └────────────────────────────────────────────────────────────────────────┘
 MODEL_NAME=EVA01-CLIP-g-14
+# MODEL_NAME=EVA02-CLIP-L-14
 # PRETRAINED=/mnt/pfs/data/yckj1563/projects/EVA_wjf/pretrained/EVA01_CLIP_g_14_psz14_s11B.pt
-PRETRAINED=/mnt/pfs/data/yckj1563/projects/EVA_wjf/EVA-CLIP/rei/logs/2023_05_28-21_05_08-model_EVA01-CLIP-g-14-lr_3.4e-05-b_2176-j_8-p_amp_bf16/checkpoints/epoch_3.pt
+# PRETRAINED=/mnt/pfs/data/yckj1563/projects/EVA_wjf/EVA-CLIP/rei/logs/2023_05_28-21_05_08-model_EVA01-CLIP-g-14-lr_3.4e-05-b_2176-j_8-p_amp_bf16/checkpoints/epoch_3.pt
+PRETRAINED=/mnt/pfs/data/yckj1563/projects/EVA_wjf/model_soup_output.pt
 DATA_PATH=/mnt/pfs/data/yckj1563/data/imagenet/val/
 cd EVA-CLIP/rei
 
@@ -38,7 +40,8 @@ cd EVA-CLIP/rei
         --imagenet-val ${DATA_PATH} \
         --model ${MODEL_NAME} \
         --pretrained ${PRETRAINED} \
-        --force-custom-clip
+        --force-custom-clip \
+        --precision=fp16
 
 # ┌────────────────────────────────────────────────────────────────────────┐
 # │              可视化      

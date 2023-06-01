@@ -126,6 +126,7 @@ def parse_args(args):
     parser.add_argument(
         "--epochs", type=int, default=32, help="Number of epochs to train for."
     )
+    parser.add_argument("--lr-scheduler", choices=["warmup_step_lr", "warmup_cosine_lr"],default="warmup_cosine_lr", help="lr decay scheduler.")
     parser.add_argument("--lr", type=float, default=None, help="Learning rate.")
     parser.add_argument("--text-lr", type=float, default=None, help="Learning rate of text encoder.")
     parser.add_argument("--visual-lr", type=float, default=None, help="Learning rate of visual encoder.")

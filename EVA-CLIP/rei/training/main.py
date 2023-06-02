@@ -161,10 +161,12 @@ def main(args):
     if args.distill:
         # FIXME: currenlty assumes the model your distilling from has the same tokenizer & transforms.
         dist_model, _, _ = create_model_and_transforms(
-            args.distill_model, 
-            args.distill_pretrained,
+            model_name = args.distill_model, 
+            pretrained = args.distill_pretrained,
             device=device,
             precision=args.precision,
+            force_quick_gelu=args.force_quick_gelu,
+            force_custom_clip=args.force_custom_clip,
             output_dict=True,
         )
 

@@ -8,6 +8,7 @@ sys.path.append(os.getcwd())
 import numpy as np
 import torch
 from torch.cuda.amp import GradScaler
+from mmengine.config import Config, ConfigDict, DictAction
 
 try:
     import wandb
@@ -19,7 +20,7 @@ try:
 except ImportError:
     tensorboard = None
 
-from eva_clip import create_model_and_transforms, create_model_from_pretrained, trace_model, get_tokenizer
+from eva_clip import create_model_and_transforms, create_model_from_pretrained, trace_model, get_tokenizer, create_loss
 
 from training.data import get_data
 from training.distributed import is_master, init_distributed_device, world_info_from_env, create_deepspeed_config
@@ -34,10 +35,17 @@ def random_seed(seed=42, rank=0):
     np.random.seed(seed + rank)
     random.seed(seed + rank)
 
+def merge_args(cfg, args):
+    """Merge CLI arguments to config."""
+    for key in cfg:
+        args.__setattr__(key,cfg[key])
+    return args
 
 def main(args):
     args, ds_init = parse_args(args)
-
+    if args.config is not None:
+        cfg = Config.fromfile(args.config)
+        args = merge_args(cfg, args)
     if ds_init is not None:
         create_deepspeed_config(args)
 
@@ -119,6 +127,14 @@ def main(args):
     else:
         logging.info(f'Running with a single process. Device {args.device}.')
 
+    dist_model = None
+    args.distill = args.distill_model is not None and args.distill_pretrained is not None
+    if args.distill:
+        #FIXME: support distillation with grad accum.
+        # assert args.accum_freq == 1
+        #FIXME: support distillation with coca.
+        assert 'coca' not in args.model.lower()
+
     random_seed(args.seed, 0)
     model, preprocess_train, preprocess_val = create_model_and_transforms(
         args.model,
@@ -137,9 +153,20 @@ def main(args):
         image_std=args.image_std,
         cache_dir=args.cache_dir,
         skip_list=args.skip_list,
+        output_dict=True,
     )
 
     random_seed(args.seed, args.rank)
+
+    if args.distill:
+        # FIXME: currenlty assumes the model your distilling from has the same tokenizer & transforms.
+        dist_model, _, _ = create_model_and_transforms(
+            args.distill_model, 
+            args.distill_pretrained,
+            device=device,
+            precision=args.precision,
+            output_dict=True,
+        )
 
     total_n_parameters = sum(p.numel() for p in model.parameters())
     logging.info(f'number of total params: {total_n_parameters}')
@@ -198,7 +225,8 @@ def main(args):
                 ddp_args['static_graph'] = True
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], **ddp_args)
             model_without_ddp = model.module
-            
+        if args.distill:
+            dist_model = torch.nn.parallel.DistributedDataParallel(dist_model, device_ids=[device], **ddp_args)     
 
     # create optimizer and scaler
     optimizer = None
@@ -331,12 +359,12 @@ def main(args):
         return
 
     # torch.cuda.synchronize()
-
+    loss = create_loss(args)
     for epoch in range(start_epoch, args.epochs):
         if is_master(args):
             logging.info(f'Start epoch {epoch}')
 
-        train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, writer)
+        train_one_epoch(model, data, loss, epoch, optimizer, scaler, scheduler, dist_model, args, writer)
         completed_epoch = epoch + 1
 
         if any(v in data for v in ('val', 'imagenet-val', 'imagenet-v2')):

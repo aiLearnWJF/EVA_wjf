@@ -74,6 +74,7 @@ class ClsPooler(nn.Module):
 
 class HFTextEncoder(nn.Module):
     """HuggingFace model adapter"""
+    output_tokens: torch.jit.Final[bool]
     def __init__(
             self, 
             model_name_or_path: str,
@@ -83,9 +84,10 @@ class HFTextEncoder(nn.Module):
             pooler_type: str = None,
             proj: str = None,
             pretrained: bool = True,
+            output_tokens: bool = False,
             masked_language_modeling: bool = False):
         super().__init__()
-
+        self.output_tokens = output_tokens
         self.output_dim = output_dim
 
         # TODO: find better way to get this information
@@ -214,8 +216,18 @@ class HFTextEncoder(nn.Module):
         attn_mask = (x != self.config.pad_token_id).long()
         out = self.transformer(input_ids=x, attention_mask=attn_mask)
         pooled_out = self.pooler(out, attn_mask)
+        projected = self.proj(pooled_out)
 
-        return self.proj(pooled_out)
+        seq_len = out.last_hidden_state.shape[1]
+        tokens = (
+            out.last_hidden_state[:, torch.arange(seq_len) != self.pooler.cls_token_position, :] 
+            if type(self.pooler) == ClsPooler 
+            else out.last_hidden_state
+        )
+        
+        if self.output_tokens:
+            return projected, tokens
+        return projected
 
     def lock(self, unlocked_layers:int=0, freeze_layer_norm:bool=True):
         if not unlocked_layers: # full freezing

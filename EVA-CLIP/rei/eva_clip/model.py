@@ -56,6 +56,20 @@ class CLIPVisionCfg:
     naiveswiglu: bool = False
     subln: bool = False
 
+    input_patchnorm: bool = False  # whether to use dual patchnorm - would only apply the input layernorm on each patch, as post-layernorm already exist in original clip vit design
+    attentional_pool: bool = False  # whether to use attentional pooler in the last embedding layer
+    n_queries: int = 256  # n_queries for attentional pooler
+    attn_pooler_heads: int = 8  # n heads for attentional_pooling
+    output_tokens: bool = False
+
+    timm_model_name: str = None  # a valid model name overrides layers, width, patch_size
+    timm_model_pretrained: bool = False  # use (imagenet) pretrained weights for named model
+    timm_pool: str = 'avg'  # feature pooling for timm model ('abs_attn', 'rot_attn', 'avg', '')
+    timm_proj: str = 'linear'  # linear projection for timm model output ('linear', 'mlp', '')
+    timm_proj_bias: bool = False  # enable bias final projection
+    timm_drop: float = 0.  # head dropout
+    timm_drop_path: Optional[float] = None  # backbone stochastic depth
+
 
 @dataclass
 class CLIPTextCfg:
@@ -74,6 +88,9 @@ class CLIPTextCfg:
     fusedLN: bool = False
     xattn: bool = False
     attn_mask: bool = True
+    embed_cls: bool = False
+    pad_id: int = 0
+    output_tokens: bool = False
 
 def get_cast_dtype(precision: str):
     cast_dtype = None
@@ -158,9 +175,13 @@ def _build_vision_tower(
             ls_init_value=vision_cfg.ls_init_value,
             patch_dropout=vision_cfg.patch_dropout,
             global_average_pool=vision_cfg.global_average_pool,
-            output_dim=embed_dim,
             act_layer=act_layer,
             norm_layer=norm_layer,
+            attentional_pool=vision_cfg.attentional_pool,
+            n_queries=vision_cfg.n_queries,
+            attn_pooler_heads=vision_cfg.attn_pooler_heads,
+            output_tokens=vision_cfg.output_tokens,
+            output_dim=embed_dim,
         )
 
     return visual
@@ -182,7 +203,8 @@ def _build_text_tower(
             tokenizer_name=text_cfg.hf_tokenizer_name,
             proj=text_cfg.proj,
             pooler_type=text_cfg.pooler_type,
-            masked_language_modeling=text_cfg.masked_language_modeling
+            masked_language_modeling=text_cfg.masked_language_modeling,
+            output_tokens=text_cfg.output_tokens,
        )
     else:
         act_layer = QuickGELU if quick_gelu else nn.GELU
@@ -196,6 +218,8 @@ def _build_text_tower(
             layers=text_cfg.layers,
             ls_init_value=text_cfg.ls_init_value,
             output_dim=embed_dim,
+            embed_cls=text_cfg.embed_cls,
+            output_tokens=text_cfg.output_tokens,
             act_layer=act_layer,
             # norm_layer= FusedLayerNorm if text_cfg.fusedLN else norm_layer,
             norm_layer= norm_layer,
@@ -205,6 +229,7 @@ def _build_text_tower(
     return text
 
 class CLIP(nn.Module):
+    output_dict: torch.jit.Final[bool]
     def __init__(
             self,
             embed_dim: int,
@@ -212,8 +237,10 @@ class CLIP(nn.Module):
             text_cfg: CLIPTextCfg,
             quick_gelu: bool = False,
             cast_dtype: Optional[torch.dtype] = None,
+            output_dict: bool = False,
     ):
         super().__init__()
+        self.output_dict = output_dict
         self.visual = _build_vision_tower(embed_dim, vision_cfg, quick_gelu, cast_dtype)
 
         text = _build_text_tower(embed_dim, text_cfg, quick_gelu, cast_dtype)
@@ -261,10 +288,17 @@ class CLIP(nn.Module):
     def forward(self, image, text):
         image_features = self.encode_image(image, normalize=True)
         text_features = self.encode_text(text, normalize=True)
+        if self.output_dict:
+            return {
+                "image_features": image_features,
+                "text_features": text_features,
+                "logit_scale": self.logit_scale.exp()
+            }
         return image_features, text_features, self.logit_scale.exp()
 
 
 class CustomCLIP(nn.Module):
+    output_dict: torch.jit.Final[bool]
     def __init__(
             self,
             embed_dim: int,
@@ -273,8 +307,10 @@ class CustomCLIP(nn.Module):
             quick_gelu: bool = False,
             cast_dtype: Optional[torch.dtype] = None,
             itm_task: bool = False,
+            output_dict: bool = False,
     ):
         super().__init__()
+        self.output_dict = output_dict
         self.visual = _build_vision_tower(embed_dim, vision_cfg, quick_gelu, cast_dtype)
         self.text = _build_text_tower(embed_dim, text_cfg, quick_gelu, cast_dtype)
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
@@ -306,6 +342,12 @@ class CustomCLIP(nn.Module):
     def forward(self, image, text):
         image_features = self.encode_image(image, normalize=True)
         text_features = self.encode_text(text, normalize=True)
+        if self.output_dict:
+            return {
+                "image_features": image_features,
+                "text_features": text_features,
+                "logit_scale": self.logit_scale.exp()
+            }
         return image_features, text_features, self.logit_scale.exp()
 
 

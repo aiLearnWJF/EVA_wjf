@@ -8,7 +8,7 @@ import gc
 import numpy as np
 import torch
 import torch.nn as nn
-from torch._six import inf
+from torch import inf
 import torch.nn.functional as F
 import torch.distributed as dist
 
@@ -70,20 +70,14 @@ def get_grad_norm_(parameters, norm_type: float = 2.0) -> torch.Tensor:
         total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach(), norm_type).to(device) for p in parameters]), norm_type)
     return total_norm.to(dtype=torch.float32)
 
-def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_writer=None):
+def train_one_epoch(model, data, loss, epoch, optimizer, scaler, scheduler, dist_model, args, tb_writer=None):
     device = torch.device(args.device)
     autocast = get_autocast(args.precision)
     cast_dtype = get_cast_dtype(args.precision)
 
     model.train()
-    loss = ClipLoss(
-        local_loss=args.local_loss,
-        gather_with_grad=args.gather_with_grad,
-        cache_labels=True,
-        rank=args.rank,
-        world_size=args.world_size,
-        )
-
+    if args.distill:
+        dist_model.eval()
 
     data['train'].set_epoch(epoch)  # set epoch in process safe manner via sampler or shared_epoch
     dataloader = data['train'].dataloader
@@ -111,19 +105,19 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
         texts = texts.to(device=device, non_blocking=True)
 
         data_time_m.update(time.time() - end)
-        if args.enable_deepspeed:
-            pass
-            # model.zero_grad()
-            # model.micro_steps = 0
-            # if model._is_gradient_accumulation_boundary:
-            #     model.zero_grad()
-            #     model.micro_steps = 0
-        else:
+        if not args.enable_deepspeed:
             optimizer.zero_grad()
 
         with autocast():
-            image_features, text_features, logit_scale = model(images, texts)
-            total_loss, acc = loss(image_features, text_features, logit_scale)
+            model_out = model(images, texts)
+            logit_scale = model_out["logit_scale"]
+            if args.distill:
+                with torch.no_grad():
+                    dist_model_out = dist_model(images, texts)
+                model_out.update({f'dist_{k}' : v for k, v in dist_model_out.items()})
+            losses = loss(**model_out, output_dict=True)
+            total_loss = sum(losses.values())
+            # total_loss, acc = loss(image_features, text_features, logit_scale)
             clip_loss = total_loss.clone().detach()
 
         loss_list = [torch.zeros_like(total_loss) for _ in range(dist.get_world_size())]
@@ -200,8 +194,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 f"LR_visual: {optimizer.param_groups[index_visual]['lr']:.9f} "
                 f"LR_text: {optimizer.param_groups[index_text]['lr']:.9f} "
                 f"Logit Scale: {logit_scale_scalar:.3f} "
-                f"i2t_acc: {acc['i2t'].item() * 100:.2f} "
-                f"t2i_acc: {acc['t2i'].item() * 100:.2f} "
+                # f"i2t_acc: {acc['i2t'].item() * 100:.2f} "
+                # f"t2i_acc: {acc['t2i'].item() * 100:.2f} "
                 f"Data (t): {data_time_m.avg:.3f} "
                 f"Batch (t): {batch_time_m.avg:.3f}, {args.batch_size*args.world_size / batch_time_m.val:#g}/s"
             )
@@ -212,8 +206,8 @@ def train_one_epoch(model, data, epoch, optimizer, scaler, scheduler, args, tb_w
                 "loss_clip": loss_clip_m.val,
                 "loss_scaler": loss_scaler.val,
                 "grad_nrom": grad_norm_m.val,
-                "i2t_acc": acc['i2t'].item() * 100,
-                "t2i_acc": acc['t2i'].item() * 100,
+                # "i2t_acc": acc['i2t'].item() * 100,
+                # "t2i_acc": acc['t2i'].item() * 100,
                 "scale":  logit_scale_scalar,
                 "lr": optimizer.param_groups[0]["lr"],
                 "lr_visual": optimizer.param_groups[index_visual]["lr"],

@@ -12,6 +12,7 @@ def get_default_params(model_name):
 
 def parse_args(args):
     parser = argparse.ArgumentParser()
+    parser.add_argument('--config',  type=str, default=None, help='train config file path')
     parser.add_argument(
         "--train-data",
         type=str,
@@ -310,6 +311,18 @@ def parse_args(args):
         help="Force use of CustomCLIP model (separate text-tower).",
     )
     parser.add_argument(
+        "--coca-caption-loss-weight",
+        type=float,
+        default=2.0,
+        help="Weight assigned to caption loss in CoCa."
+    )
+    parser.add_argument(
+        "--coca-contrastive-loss-weight",
+        type=float,
+        default=1.0,
+        help="Weight assigned to contrastive loss when training CoCa."
+    )
+    parser.add_argument(
         "--torchscript",
         default=False,
         action='store_true',
@@ -451,6 +464,18 @@ def parse_args(args):
         type=int,
         default=100,
         help="Step interval to store embeddings",
+    )
+
+    parser.add_argument(
+        "--distill-model",
+        default=None,
+        help='Which model arch to distill from, if any.'
+    )
+    
+    parser.add_argument(
+        "--distill-pretrained",
+        default=None,
+        help='Which pre-trained weights to distill from, if any.'
     )
 
     args = parser.parse_args(args)

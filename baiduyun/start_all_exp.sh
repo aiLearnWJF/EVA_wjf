@@ -22,7 +22,10 @@
 # bash start_mul_together.sh Eva_clip_0526_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_lr1000_lrv10_lrt10_step500_ep15
 
 #61
-bash start_mul_together.sh L_Eva_clip_0526_EVA02_CLIP_L_14_baseline
+# bash start_mul_together.sh L_Eva_clip_0526_EVA02_CLIP_L_14_baseline
+# bash start_mul_together.sh B_Eva_clip_0526_EVA02_CLIP_B_16_distill_L
+sleep 5h
+bash start_mul_together.sh B_Eva_clip_0526_EVA02_CLIP_B_16_baseline
 
 # inspect
 # /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python inspect_warning.py  --delay 120 --gpu_mem_thr 20 --gpu_usage_thr 50 --cpu_mem_thr 50 --sleepaw 36000

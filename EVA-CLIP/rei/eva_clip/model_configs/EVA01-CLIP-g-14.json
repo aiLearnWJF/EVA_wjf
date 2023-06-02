@@ -10,7 +10,7 @@
         "eva_model_name": "eva-clip-g-14-x",
         "drop_path_rate": 0.4,
         "xattn": true,
-        "fusedLN": true
+        "fusedLN": false
     },
     "text_cfg": {
         "context_length": 77,
@@ -19,6 +19,6 @@
         "heads": 12,
         "layers": 12,
         "xattn": false,
-        "fusedLN": true
+        "fusedLN": false
     }
 }

@@ -19,6 +19,8 @@ except:
 from .constants import OPENAI_DATASET_MEAN, OPENAI_DATASET_STD
 from .model import CLIP, CustomCLIP, convert_weights_to_lp, convert_to_custom_text_state_dict,\
     get_cast_dtype
+from .coca_model import CoCa
+from .loss import ClipLoss, DistillClipLoss, CoCaLoss
 from .openai import load_openai_model
 from .pretrained import is_pretrained_cfg, get_pretrained_cfg, download_pretrained, list_pretrained_tags_by_model
 from .transform import image_transform
@@ -232,6 +234,7 @@ def create_model(
         pretrained_text_model: str = None,
         cache_dir: Optional[str] = None,
         skip_list: list  = [],
+        output_dict: Optional[bool] = None,
 ):
     model_name = model_name.replace('/', '-')  # for callers using old naming with / in ViT names
     if isinstance(device, str):
@@ -275,7 +278,10 @@ def create_model(
         if custom_clip:
             if 'hf_model_name' in model_cfg.get('text_cfg', {}):
                 model_cfg['text_cfg']['hf_model_pretrained'] = pretrained_hf
-            model = CustomCLIP(**model_cfg, cast_dtype=cast_dtype)
+            if "coca" in model_name:
+                model = CoCa(**model_cfg, cast_dtype=cast_dtype)
+            else:
+                model = CustomCLIP(**model_cfg, cast_dtype=cast_dtype)
         else:
             model = CLIP(**model_cfg, cast_dtype=cast_dtype)
 
@@ -322,7 +328,7 @@ def create_model(
             if pretrained_text:
                 pretrained_text_model = pretrained_text_model.replace('/', '-')  # for callers using old naming with / in ViT names
                 pretrained_text_cfg = get_pretrained_cfg(pretrained_text_model, pretrained_text)
-                if pretrained_text_cfg:
+                if pretrained_image_cfg:
                     text_checkpoint_path = download_pretrained(pretrained_text_cfg, cache_dir=cache_dir)
                 elif os.path.exists(pretrained_text):
                     text_checkpoint_path = pretrained_text
@@ -357,6 +363,9 @@ def create_model(
         model.visual.image_mean = pretrained_cfg.get('mean', None) or OPENAI_DATASET_MEAN
         model.visual.image_std = pretrained_cfg.get('std', None) or OPENAI_DATASET_STD
 
+        if output_dict and hasattr(model, "output_dict"):
+            model.output_dict = True
+            
         if jit:
             model = torch.jit.script(model)
 
@@ -381,6 +390,7 @@ def create_model_and_transforms(
         image_std: Optional[Tuple[float, ...]] = None,
         cache_dir: Optional[str] = None,
         skip_list: list = [],
+        output_dict: Optional[bool] = None,
 ):
     model = create_model(
         model_name,
@@ -398,6 +408,7 @@ def create_model_and_transforms(
         pretrained_text_model=pretrained_text_model,
         cache_dir=cache_dir,
         skip_list=skip_list,
+        output_dict=output_dict,
     )
 
     image_mean = image_mean or getattr(model.visual, 'image_mean', None)
@@ -466,3 +477,34 @@ def create_model_from_pretrained(
     )
 
     return model, preprocess
+
+
+def create_loss(args):
+    if args.distill:
+        return DistillClipLoss(
+            local_loss=args.local_loss,
+            gather_with_grad=args.gather_with_grad,
+            cache_labels=True,
+            rank=args.rank,
+            world_size=args.world_size,
+            use_horovod=False,
+        )
+    elif "coca" in args.model.lower():
+        return CoCaLoss(
+            caption_loss_weight=args.coca_caption_loss_weight,
+            clip_loss_weight=args.coca_contrastive_loss_weight,
+            local_loss=args.local_loss,
+            gather_with_grad=args.gather_with_grad,
+            cache_labels=True,
+            rank=args.rank,
+            world_size=args.world_size,
+            use_horovod=False,
+        )
+    return ClipLoss(
+        local_loss=args.local_loss,
+        gather_with_grad=args.gather_with_grad,
+        cache_labels=True,
+        rank=args.rank,
+        world_size=args.world_size,
+        use_horovod=False,
+    )

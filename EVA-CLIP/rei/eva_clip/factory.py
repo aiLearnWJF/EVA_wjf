@@ -488,6 +488,7 @@ def create_loss(args):
             rank=args.rank,
             world_size=args.world_size,
             use_horovod=False,
+            clip_distill_loss_weights = args.clip_distill_loss_weights,
         )
     elif "coca" in args.model.lower():
         return CoCaLoss(

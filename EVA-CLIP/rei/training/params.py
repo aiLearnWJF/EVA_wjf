@@ -477,6 +477,11 @@ def parse_args(args):
         default=None,
         help='Which pre-trained weights to distill from, if any.'
     )
+    
+    parser.add_argument(
+        "--clip-distill-loss-weights", type=float, nargs='+', default=[],
+        help='clip-distill-loss-weights. for exapmple: 0.5 0.5'
+    )
 
     args = parser.parse_args(args)
 

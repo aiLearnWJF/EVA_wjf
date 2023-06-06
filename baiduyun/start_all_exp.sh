@@ -23,12 +23,23 @@
 
 #61
 # bash start_mul_together.sh L_Eva_clip_0526_EVA02_CLIP_L_14_baseline
-bash start_mul_together.sh B_Eva_clip_0526_EVA02_CLIP_B_16_distill_L
+# bash start_mul_together.sh B_Eva_clip_0526_EVA02_CLIP_B_16_distill_L
 
 # bash start_mul_together.sh B_Eva_clip_0526_EVA02_CLIP_B_16_baseline
 
-#62
-# bash start_mul_together.sh Eva_clip_0526_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_distillE
+#0602 EdG
+# bash start_mul_together.sh EdG_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_bs05_distillE
+# bash start_mul_together.sh EdG_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_bs05_distillE_lr10
+# bash start_mul_together.sh EdG_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_bs05_distillE_lr01
+# bash start_mul_together.sh EdG_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_bs05_distillE_cd_loss0-1
+# bash start_mul_together.sh EdG_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_bs05_distillE_cd_loss2-1
+# bash start_mul_together.sh EdG_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_bs05_distillE_cd_loss1-2
 
+bash start_mul_together.sh EdG_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_bs05_distillE_lock075  
+sleep 13h
+bash start_mul_together.sh EdG_EVA01_CLIP_g_14_plus_psz14_s11B_baseline_bs05_distillE_lock_keep1
+
+#0605 dino
+# bash start_mul_together.sh L_Eva_clip_0526_EVA02_CLIP_L_14_baseline_loadV_L
 # inspect
 # /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python inspect_warning.py  --delay 120 --gpu_mem_thr 20 --gpu_usage_thr 50 --cpu_mem_thr 50 --sleepaw 36000

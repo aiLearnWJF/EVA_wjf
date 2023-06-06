@@ -24,10 +24,10 @@ PRETRAINED_TEXT=openai #/home/yckj3860/.cache/clip/ViT-B-16.pt
 PRETRAINED_VISUAL_MODEL=EVA02-B-16
 PRETRAINED_TEXT_MODEL=OpenaiCLIP-B-16
 
-Distill_model=EVA01-CLIP-g-14
-Distill_pretrained="/mnt/pfs/data/yckj1563/projects/EVA_wjf/pretrained/EVA01_CLIP_g_14_psz14_s11B.pt"
-# Distill_model=EVA02-CLIP-bigE-14
-# Distill_pretrained="/mnt/pfs/data/yckj1563/projects/EVA_wjf/pretrained/EVA02_CLIP_E_psz14_s4B.pt"
+# Distill_model=EVA01-CLIP-g-14
+# Distill_pretrained="/mnt/pfs/data/yckj1563/projects/EVA_wjf/pretrained/EVA01_CLIP_g_14_psz14_s11B.pt"
+Distill_model=EVA02-CLIP-bigE-14
+Distill_pretrained="/mnt/pfs/data/yckj1563/projects/EVA_wjf/pretrained/EVA02_CLIP_E_psz14_s4B.pt"
 
 
 # can automaticaly download and load pretrained models by follwing 4 lines; please check details in pretrained.py
@@ -56,6 +56,7 @@ nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m
     training/main.py \
         --save-frequency 1 \
         --zeroshot-frequency 1 \
+        --log-every-n-steps 50 \
         --report-to="tensorboard" \
         --wandb-project-name="eva-clip" \
         --wandb-notes="eva01_clip_g_plus_14" \
@@ -65,11 +66,11 @@ nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m
         --dataset-type-list="webdataset;webdataset" \
         --imagenet-val=${VAL_DATA_PATH} \
         --warmup 20 \
-        --batch-size=1200 \
+        --batch-size=1024 \
         --epochs=7 \
-        --lr=3.4e-4 \
-        --visual-lr=2.7e-4 \
-        --text-lr=2.7e-5 \
+        --lr=1.7e-4 \
+        --visual-lr=2.4e-4 \
+        --text-lr=2.4e-5 \
         --wd=0.05 \
         --visual-wd=0.05 \
         --text-wd=0.05 \
@@ -81,6 +82,8 @@ nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m
         --workers=8 \
         --model=${MODEL} \
         --pretrained ${PRETRAINED} \
+        --lock-image-unlocked-groups 10 \
+        --lock-text-unlocked-layers 3 \
         --skip-list head.weight head.bias lm_head.weight lm_head.bias mask_token text_projection logit_scale \
         --seed 4096 \
         --gather-with-grad \
@@ -93,4 +96,5 @@ nohup /mnt/pfs/data/yckj1563/miniconda3/envs/py37_torch1_7_evaclip/bin/python -m
         --zero-stage=1 \
         --distill-model ${Distill_model} \
         --distill-pretrained ${Distill_pretrained} \
+        --clip-distill-loss-weights 0.5 0.5 \
         >/mnt/pfs/data/yckj1563/projects/EVA_wjf/baiduyun/outputs/${5}_${2}.log 2>&1  &

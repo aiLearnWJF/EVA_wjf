@@ -219,6 +219,20 @@ class CoCaLoss(ClipLoss):
 
 class DistillClipLoss(ClipLoss):
 
+    def __init__(
+            self,
+            local_loss=False,
+            gather_with_grad=False,
+            cache_labels=False,
+            rank=0,
+            world_size=1,
+            use_horovod=False,
+            clip_distill_loss_weights = [0.5,0.5]
+    ):
+        super().__init__()
+        self.Clip_distill_loss_weights = clip_distill_loss_weights
+
+
     def dist_loss(self, teacher_logits, student_logits):
         return -(teacher_logits.softmax(dim=1) * student_logits.log_softmax(dim=1)).sum(dim=1).mean(dim=0)
 
@@ -249,6 +263,8 @@ class DistillClipLoss(ClipLoss):
             self.dist_loss(dist_logits_per_image, logits_per_image) +
             self.dist_loss(dist_logits_per_text, logits_per_text)
         ) / 2
+        contrastive_loss = contrastive_loss*self.Clip_distill_loss_weights[0]
+        distill_loss = distill_loss*self.Clip_distill_loss_weights[1]
 
         if output_dict:
             return {"contrastive_loss": contrastive_loss, "distill_loss": distill_loss}
